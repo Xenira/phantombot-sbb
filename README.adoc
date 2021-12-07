@@ -1,0 +1,28 @@
+= Sotrybook Brawl Phantombot tracker
+
+WARNING: This is a personal project and currently under development. It is working fine for my streams, but might still have some issues.
+
+This is an extension for link:phantombot.github.io[Phantombot] to track and display link:https://storybookbrawl.com[Storybook Brawl] statistics on your stream.
+
+== Commands
+
+!sbb:: Prints your statistics to chat.
+!sbb start [points] [wins] <stream-title>:: Sets your starting points and wins. When a stream title is provided the bot will automatically update your stream title with new match results.
+!sbb hero [short-name]:: Sets your current hero. You can find the short names in ```/scripts/lang/custom/custom-sbb.js```
+!sbb result [place] [points] <first-win>:: Records result for your current hero. NOTE: First win shoul only be provided when it is your fist win and be ```true```. This is currently not working correctly though.
+!sbb set [points] [wins] <stream-title>:: Manually sets your points and wins without reseting the history.
+!sbb stats:: Prints your stats to chat and shows overlay.
+
+== Text sources
+You can integrate the following text files from ```/addons/sbb``` as Text sources into your OBS:
+
+placements.txt:: History of your matches since last ```!sbb start``` command.
+score.txt:: [Start Score]/[Current Score]
+wins.txt:: Your current first place count.
+
+The ```history.txt``` file records your past matches. Do NOT delete this unless you want to reset your bot!
+
+== Setup
+To install the tracker copy the content of this repository inside your phantombot directory and restart Phantombot.
+
+To integrate the overlay into OBS add a new browser source to OBS. The URL is ```file:///<your-phantombot-directory>/web/obs/sbb-chart/index.html```

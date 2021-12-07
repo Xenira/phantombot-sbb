@@ -1,0 +1,42 @@
+# Bot Directories
+addons
+config
+dbbackup
+lib
+logs
+licenses
+scripts/core
+scripts/commands
+scripts/discord
+scripts/games
+scripts/handlers
+scripts/systems
+scripts/lang/english/commands
+scripts/lang/english/discord
+scripts/lang/english/games
+scripts/lang/english/handlers
+scripts/lang/english/systems
+scripts/lang/german
+web/alerts
+web/common
+web/oauth
+web/obs/poll-chart
+web/panel
+web/playlist
+web/ytplayer
+
+# Bot Files
+scripts/lang/custom/README
+scripts/custom/README.txt
+scripts/init.js
+scripts/lang/english/main.js
+web/index.html
+web/favicon.ico
+web/style.css
+PhantomBot.jar
+launch.sh
+launch.bat
+launch-service.sh
+
+# VS Code
+.vscode/settings.json
