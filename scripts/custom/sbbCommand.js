@@ -195,9 +195,15 @@
                 $.sbbPrintHeroStats(currentHero);
             } else {
                 /*
-                 * @commandpath sbb start [score] [wins] - Sets up base stats
+                 * @commandpath sbb start [score] [wins] [stream-title] - Sets up base stats
                  */
                 if (action.equalsIgnoreCase('start')) {
+
+                    if (args.length < 3 || args.length > 4) {
+                        $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.start'));
+                        return;
+                    }
+
                     $.inidb.del(FILE_NAME, CURRENT_HERO);
                     $.inidb.del(FILE_NAME, SESSION_PLACEMENTS);
 
@@ -219,7 +225,15 @@
                     return;
                 }
 
+                 /*
+                 * @commandpath sbb set [score] [wins] [stream-title] - Sets up base stats without history reset
+                 */
                 if (action.equalsIgnoreCase('set')) {
+                    if (args.length < 3 || args.length > 4) {
+                        $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.set'));
+                        return;
+                    }
+
                     var currentScore = parseInt(args[1]),
                         wins = parseInt(args[2]);
 
@@ -242,6 +256,11 @@
                  * @commandpath sbb hero [name] - Sets the current hero being played.
                  */
                 if (action.equalsIgnoreCase('hero')) {
+                    if (args.length !== 2) {
+                        $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.hero'));
+                        return;
+                    }
+
                     var hero = args[1].toLowerCase();
                     if (!$.lang.get('sbb.hero.' + hero)) {
                         $.say($.whisperPrefix(sender) + $.lang.get('sbb.hero.404', hero));
@@ -268,10 +287,20 @@
                  * @commandpath sbb result [place] [points] <first-win> - Records a match and resets the current hero
                  */
                 if (action.equalsIgnoreCase('result')) {
+                    if (args.length !== 3) {
+                        $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.result'));
+                        return;
+                    }
+
                     var currentScore = $.getIniDbNumber(FILE_NAME, CURRENT_SCORE),
                         sessionPlacements = $.getIniDbString(FILE_NAME, SESSION_PLACEMENTS, ''),
                         place = parseInt(args[1]),
                         points = parseInt(args[2]);
+
+                    if (place < 1 || place > 8) {
+                        $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.result'));
+                        return;
+                    }
 
                     var historyEntry = {
                         hero: currentHero,
@@ -314,6 +343,9 @@
                     return;
                 }
 
+                 /*
+                 * @commandpath sbb stats - Triggers stat overlay to show
+                 */
                 if (action.equalsIgnoreCase('stats')) {
                     var msg = JSON.stringify({
                         show_stats: 'true',

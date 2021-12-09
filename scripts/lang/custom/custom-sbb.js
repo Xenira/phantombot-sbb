@@ -4,6 +4,11 @@ $.lang.register('sbb.format.score', '$1/$2');
 $.lang.register('sbb.format.title.ingame', '[$2] $1 | Start/Current: $3/$4 | !vote 1/2/3/4 | !sbb');
 $.lang.register('sbb.format.title.global', '$1 | Start/Current: $2/$3 | !vote 1/2/3/4 | !sbb');
 
+$.lang.register('sbb.usage.start', 'Usage: !sbb start [points] [wins] <stream-title>');
+$.lang.register('sbb.usage.set', 'Usage: !sbb set [points] [wins] <stream-title>');
+$.lang.register('sbb.usage.hero', 'Usage: !sbb hero [short-name]');
+$.lang.register('sbb.usage.result', 'Usage: !sbb result [place] [points] <first-win>');
+
 $.lang.register('sbb.start', 'Game was set up with starting score of $1 and $2 wins.');
 
 $.lang.register('sbb.stats.global', 'Global stats: W/L [All Time]: $1 [$2]');
