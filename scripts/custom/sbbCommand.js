@@ -287,7 +287,7 @@
                  * @commandpath sbb result [place] [points] <first-win> - Records a match and resets the current hero
                  */
                 if (action.equalsIgnoreCase('result')) {
-                    if (args.length !== 3) {
+                    if (args.length < 3 || args.length > 4) {
                         $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.result'));
                         return;
                     }
