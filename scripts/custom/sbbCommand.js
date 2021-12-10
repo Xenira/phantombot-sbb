@@ -32,6 +32,9 @@
 
     var streamTitle = null;
 
+    var JFile = java.io.File,
+        JFileInputStream = java.io.FileInputStream;
+
     /*
      * @function sbbUpdateFiles
      *
@@ -174,6 +177,129 @@
         }
     }
 
+    /**
+     * @function readFileChanges
+     * @param {string} path
+     * @returns {Array}
+     */
+     function readFileChanges(path, lastOffset) {
+        var result = {
+            lines: [],
+            position: lastOffset,
+        }
+
+        if (!fileExists(path)) {
+            return result;
+        }
+
+        try {
+            var fis = new JFileInputStream(path);
+            fis.skip(lastOffset);
+            var scan = new java.util.Scanner(fis);
+            for (var i = 0; scan.hasNextLine(); ++i) {
+                result.lines.push(scan.nextLine());
+            }
+            result.position = fis.getChannel().position();
+            fis.close();
+        } catch (e) {
+            $.log.error('Failed to open \'' + path + '\': ' + e);
+        }
+        return result;
+    }
+
+    /**
+     * @function fileExists
+     * @export $
+     * @param {string} path
+     * @returns {boolean}
+     */
+     function fileExists(path) {
+        try {
+            var f = new JFile(path);
+            return f.exists();
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function listenForEvents(path) {
+        var initialRead = readFileChanges(path, 0),
+            offset = initialRead.position;
+        setInterval(() => {
+            fileChanges = readFileChanges(path, offset);
+            offset = fileChanges.position;
+            fileChanges.lines.forEach(line => {
+                if (line.includes('ActionPresentHeroDiscover')) {
+                    $.poll.runPoll('Which hero should I pick?', ['First', 'Second', 'Third', 'Fourth'], 30, $.channelName, 1, function(winner) {
+                        if (winner === false) {
+                            $.say($.lang.get('pollsystem.runpoll.novotes', 'Which hero should I pick?'));
+                            return;
+                        }
+                        if ($.inidb.get('pollresults', 'istie')) {
+                            $.say($.lang.get('pollsystem.runpoll.tie', 'Which hero should I pick?'));
+                        } else {
+                            $.say($.lang.get('pollsystem.runpoll.winner', 'Which hero should I pick?', winner));
+                        }
+                    });
+                } else if (line.includes('ActionEnterResultsPhase')) {
+                    $.consoleLn('Finished game')
+                    var place = parseInt(line.match(/Placement: (\d)/)[1]),
+                        points = parseInt(line.match(/RankReward: (-?\d+)/)[1]);
+                        firstWinPoints = parseInt(line.match(/FirstWinOfTheDayDustReward: (\d+)/)[1])
+                    $.consoleLn(place + ' ' + points + ' ' + firstWinPoints)
+                    setResult(place, points, firstWinPoints, $.channelName); // TODO: Fix reward
+                }
+            });
+        }, 2500);
+    }
+
+    function setResult(place, points, firstWinPoints, sender) {
+        var currentDate = new Date(),
+            currentMonth = currentDate.getMonth(),
+            currentYear = currentDate.getFullYear(),
+            currentHero = $.getIniDbString(FILE_NAME, CURRENT_HERO, undefined),
+            currentScore = $.getIniDbNumber(FILE_NAME, CURRENT_SCORE),
+            sessionPlacements = $.getIniDbString(FILE_NAME, SESSION_PLACEMENTS, '');
+
+        var historyEntry = {
+            hero: currentHero,
+            place: place,
+            points: points,
+            currentScore: currentScore,
+            date: currentDate,
+            month: currentMonth,
+            year: currentYear
+        }
+
+        if (firstWinPoints) {
+            points += firstWinPoints;
+        }
+
+        $.sbbAddHistoryEntry(historyEntry);
+        $.setIniDbNumber(FILE_NAME, CURRENT_SCORE, currentScore + points);
+
+        sessionPlacements += (sessionPlacements.length ? ',' : '') + place;
+        $.setIniDbString(FILE_NAME, SESSION_PLACEMENTS, sessionPlacements)
+        if (place === 1) {
+            $.setIniDbNumber(FILE_NAME, WINS, $.getIniDbNumber(FILE_NAME, WINS, 0) + 1)
+        }
+
+        $.inidb.del(FILE_NAME, CURRENT_HERO);
+
+        $.sbbUpdateFiles();
+        $.sbbPrintHeroStats();
+
+        setStreamTitle(sender);
+
+        var msg = JSON.stringify({
+            show_stats: 'true',
+            data: JSON.stringify($.sbbGetHistory(null, currentMonth, currentYear)),
+            title: $.lang.get('sbb.chart.global.title'),
+            timeout: 30000
+        });
+        $.alertspollssocket.sendJSONToAll(msg);
+    }
+
     /*
      * @event command
      */
@@ -292,9 +418,7 @@
                         return;
                     }
 
-                    var currentScore = $.getIniDbNumber(FILE_NAME, CURRENT_SCORE),
-                        sessionPlacements = $.getIniDbString(FILE_NAME, SESSION_PLACEMENTS, ''),
-                        place = parseInt(args[1]),
+                    var place = parseInt(args[1]),
                         points = parseInt(args[2]);
 
                     if (place < 1 || place > 8) {
@@ -302,43 +426,7 @@
                         return;
                     }
 
-                    var historyEntry = {
-                        hero: currentHero,
-                        place: place,
-                        points: points,
-                        currentScore: currentScore,
-                        date: currentDate,
-                        month: currentMonth,
-                        year: currentYear
-                    }
-
-                    if (args.length >= 4 && args[3] == 'true') {
-                        points += 25;
-                    }
-
-                    $.sbbAddHistoryEntry(historyEntry);
-                    $.setIniDbNumber(FILE_NAME, CURRENT_SCORE, currentScore + points);
-
-                    sessionPlacements += (sessionPlacements.length ? ',' : '') + place;
-                    $.setIniDbString(FILE_NAME, SESSION_PLACEMENTS, sessionPlacements)
-                    if (place === 1) {
-                        $.setIniDbNumber(FILE_NAME, WINS, $.getIniDbNumber(FILE_NAME, WINS, 0) + 1)
-                    }
-
-                    $.inidb.del(FILE_NAME, CURRENT_HERO);
-
-                    $.sbbUpdateFiles();
-                    $.sbbPrintHeroStats();
-
-                    setStreamTitle(sender);
-
-                    var msg = JSON.stringify({
-                        show_stats: 'true',
-                        data: JSON.stringify($.sbbGetHistory(null, currentMonth, currentYear)),
-                        title: $.lang.get('sbb.chart.global.title'),
-                        timeout: 30000
-                    });
-                    $.alertspollssocket.sendJSONToAll(msg);
+                    setResult(place, points, (args.length >= 4 && args[3] == 'true') ? 25 : 0, sender);
 
                     return;
                 }
@@ -371,6 +459,8 @@
         $.registerChatSubcommand('sbb', 'stats', 2);
         $.registerChatSubcommand('sbb', 'set', 2);
 
+        // Uncomment next line and put the url to your Player log file below to activate log parsing
+        // listenForEvents("C:\\Users\\<username>\\AppData\\LocalLow\\Good Luck Games\\Storybook Brawl\\Player.log")
         setInterval(function () {
             sbbUpdateFiles();
         }, 10000);

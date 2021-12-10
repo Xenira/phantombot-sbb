@@ -27,12 +27,13 @@ To install the tracker copy the content of this repository inside your phantombo
 
 To integrate the overlay into OBS add a new browser source to OBS. The URL is ```file:///<your-phantombot-directory>/web/obs/sbb-chart/index.html```
 
+To enable log parsing (automatic polls and results) uncomment the line in ```sbbCommand.js``` and change the path of the log file.
+
 == TODO
-[%interactive]
-* [ ] Add automatic log parsing (link:https://github.com/SBBTracker/SBBTracker/blob/main/src/log_parser.py[See SBBTracker])
-* [ ] Add automatic polls based on parser
+* [*] Add automatic log parsing (link:https://github.com/SBBTracker/SBBTracker/blob/main/src/log_parser.py[See SBBTracker])
+* [ ] Add automatic polls based on parser (Polls are starting, but hero selection is not available in log)
 * [ ] Track more stats with log parsing
-** Heros for selection
+** Heros for selection (Not possible?)
 ** Treasures
 ** Last seen board
 * [ ] (Maybe) create twitch plugin
