@@ -14,6 +14,15 @@ $.lang.register('sbb.start', 'Game was set up with starting score of $1 and $2 w
 $.lang.register('sbb.stats.global', 'Global stats: W/L [All Time]: $1 [$2]');
 $.lang.register('sbb.stats.hero', 'Currently playing $1. W/L [All Time]: $2 [$3] | Pick rate [All Time]: $4% [$5%]');
 
+$.lang.register('sbb.poll.question', 'Which hero should I pick?');
+$.lang.register('sbb.poll.options.1', 'First');
+$.lang.register('sbb.poll.options.2', 'Second');
+$.lang.register('sbb.poll.options.3', 'Third');
+$.lang.register('sbb.poll.options.4', 'Fourth');
+$.lang.register('sbb.poll.tie', 'The poll has ended in a tie! Randomly selected winner is $1.');
+$.lang.register('sbb.poll.novotes', 'The poll on has ended! Not enough votes were cast!');
+$.lang.register('sbb.poll.winner', 'The poll on has ended! The winner is "$1"!');
+
 $.lang.register('sbb.chart.global.title', 'Global statistics')
 $.lang.register('sbb.chart.hero.title', '$1 statistics')
 

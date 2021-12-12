@@ -230,15 +230,18 @@
             offset = fileChanges.position;
             fileChanges.lines.forEach(line => {
                 if (line.includes('ActionPresentHeroDiscover')) {
-                    $.poll.runPoll('Which hero should I pick?', ['First', 'Second', 'Third', 'Fourth'], 30, $.channelName, 1, function(winner) {
+                    var options = [$.lang.get('sbb.poll.options.1'), $.lang.get('sbb.poll.options.2'), $.lang.get('sbb.poll.options.3'), $.lang.get('sbb.poll.options.4')],
+                        question = $.lang.get('sbb.poll.question');
+                    $.poll.runPoll(question, options, 30, $.channelName, 1, function(winner) {
+                        $.consoleLn($.inidb.get('pollresults', 'istie'));
                         if (winner === false) {
-                            $.say($.lang.get('pollsystem.runpoll.novotes', 'Which hero should I pick?'));
+                            $.say($.lang.get('sbb.poll.novotes', 'Which hero should I pick?'));
                             return;
                         }
-                        if ($.inidb.get('pollresults', 'istie')) {
-                            $.say($.lang.get('pollsystem.runpoll.tie', 'Which hero should I pick?'));
+                        if ($.inidb.get('pollresults', 'istie') == 1) {
+                            $.say($.lang.get('sbb.poll.tie', options[Math.round(Math.random() * 4)]));
                         } else {
-                            $.say($.lang.get('pollsystem.runpoll.winner', 'Which hero should I pick?', winner));
+                            $.say($.lang.get('sbb.poll.winner', winner));
                         }
                     });
                 } else if (line.includes('ActionEnterResultsPhase')) {
