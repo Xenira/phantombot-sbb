@@ -29,11 +29,55 @@
         START_SCORE = 'startScore',
         WINS = 'wins',
         SESSION_PLACEMENTS = 'session';
-
-    var streamTitle = null;
+        STREAM_TITLE = 'streamTitle';
 
     var JFile = java.io.File,
         JFileInputStream = java.io.FileInputStream;
+
+    var running = false;
+
+    var heroRegex = /CardTemplateId: (\d\d)/g;
+    var cardIds = {
+        44: 'muerte',
+        45: 'mordred',
+        46: 'catter',
+        47: 'king',
+        48: 'gepetto',
+        49: 'beauty',
+        50: 'potion',
+        51: 'pants',
+        52: 'pup',
+        53: 'evella',
+        54: 'krampus',
+        55: 'claus',
+        56: 'piper',
+        57: 'giant',
+        58: 'dragon',
+        59: 'dracula',
+        60: 'gwen',
+        61: 'morgan',
+        62: 'shadow',
+        63: 'merlin',
+        64: 'grandmother',
+        65: 'fates',
+        66: 'skip',
+        67: 'xelhua',
+        68: 'charon',
+        69: 'galahad',
+        70: 'loki',
+        71: 'tiger',
+        72: 'snow-angel',
+        73: 'mask',
+        74: 'trophy',
+        75: 'waddle',
+        76: 'fallen-angel',
+        77: 'mihri',
+        78: 'horseman',
+        79: 'apocalypse',
+        80: 'midas',
+        84: 'sphinx',
+        89: 'sharebear'
+    }
 
     /*
      * @function sbbUpdateFiles
@@ -166,7 +210,8 @@
     function setStreamTitle(sender) {
         var currentHero = $.getIniDbString(FILE_NAME, CURRENT_HERO, undefined),
             currentScore = $.getIniDbNumber(FILE_NAME, CURRENT_SCORE),
-            startScore = $.getIniDbNumber(FILE_NAME, START_SCORE);
+            startScore = $.getIniDbNumber(FILE_NAME, START_SCORE),
+            streamTitle = $.getIniDbString(FILE_NAME, STREAM_TITLE, null);
 
         if (streamTitle) {
             if (currentHero) {
@@ -230,16 +275,24 @@
             offset = fileChanges.position;
             fileChanges.lines.forEach(line => {
                 if (line.includes('ActionPresentHeroDiscover')) {
-                    var options = [$.lang.get('sbb.poll.options.1'), $.lang.get('sbb.poll.options.2'), $.lang.get('sbb.poll.options.3'), $.lang.get('sbb.poll.options.4')],
-                        question = $.lang.get('sbb.poll.question');
-                    $.poll.runPoll(question, options, 30, $.channelName, 1, function(winner) {
+                    $.consoleLn('Hero selection opened');
+                    var heros = [];
+                    while ((match = heroRegex.exec(line)) !== null) {
+                        var heroNumber = parseInt(match[1]);
+                        var heroId = cardIds[heroNumber];
+                        var heroName = heroId ? $.lang.get('sbb.hero.' + heroId) : $.lang.get('sbb.poll.options.' + (heros.length + 1));
+                        heros.push(heroName);
+                    }
+                    var question = $.lang.get('sbb.poll.question');
+
+                    $.poll.runPoll(question, heros, 30, $.channelName, 1, function(winner) {
                         $.consoleLn($.inidb.get('pollresults', 'istie'));
                         if (winner === false) {
                             $.say($.lang.get('sbb.poll.novotes', 'Which hero should I pick?'));
                             return;
                         }
                         if ($.inidb.get('pollresults', 'istie') == 1) {
-                            $.say($.lang.get('sbb.poll.tie', options[Math.round(Math.random() * 4)]));
+                            $.say($.lang.get('sbb.poll.tie', heros[Math.round(Math.random() * 4)]));
                         } else {
                             $.say($.lang.get('sbb.poll.winner', winner));
                         }
@@ -251,6 +304,10 @@
                         firstWinPoints = parseInt(line.match(/FirstWinOfTheDayDustReward: (\d+)/)[1])
                     $.consoleLn(place + ' ' + points + ' ' + firstWinPoints)
                     setResult(place, points, firstWinPoints, $.channelName); // TODO: Fix reward
+                } else if (!running && line.includes('ActionCreateCard') && line.includes('Zone: Hero') && (match = heroRegex.exec(line)) != null) {
+                    var heroNumber = parseInt(match[1]);
+                    var heroId = cardIds[heroNumber];
+                    setHero(heroId, $.channelName);
                 }
             });
         }, 2500);
@@ -274,9 +331,11 @@
             year: currentYear
         }
 
-        if (firstWinPoints) {
-            points += firstWinPoints;
+        if (firstWinPoints && currentScore < 4000) {
+            points += 25;
         }
+
+        running = false;
 
         $.sbbAddHistoryEntry(historyEntry);
         $.setIniDbNumber(FILE_NAME, CURRENT_SCORE, currentScore + points);
@@ -298,6 +357,32 @@
             show_stats: 'true',
             data: JSON.stringify($.sbbGetHistory(null, currentMonth, currentYear)),
             title: $.lang.get('sbb.chart.global.title'),
+            timeout: 30000
+        });
+        $.alertspollssocket.sendJSONToAll(msg);
+    }
+
+    function setHero(hero, sender) {
+        var currentDate = new Date(),
+            currentMonth = currentDate.getMonth(),
+            currentYear = currentDate.getFullYear()
+
+        if (!$.lang.get('sbb.hero.' + hero)) {
+            $.say($.whisperPrefix(sender) + $.lang.get('sbb.hero.404', hero));
+            return;
+        }
+
+        running = true;
+
+        $.setIniDbString(FILE_NAME, CURRENT_HERO, hero);
+        $.sbbPrintHeroStats($.getIniDbString(FILE_NAME, CURRENT_HERO, undefined));
+
+        setStreamTitle(sender);
+
+        var msg = JSON.stringify({
+            show_stats: 'true',
+            data: JSON.stringify($.sbbGetHistory(hero, currentMonth, currentYear)),
+            title: $.lang.get('sbb.chart.hero.title', $.lang.get('sbb.hero.' + hero)),
             timeout: 30000
         });
         $.alertspollssocket.sendJSONToAll(msg);
@@ -345,7 +430,7 @@
                     $.sbbUpdateFiles();
 
                     if (args.length === 4) {
-                        streamTitle = args[3];
+                        $.setIniDbString(FILE_NAME, STREAM_TITLE, args[3]);
                     }
 
                     setStreamTitle(sender);
@@ -372,7 +457,7 @@
                     $.sbbUpdateFiles();
 
                     if (args.length === 4) {
-                        streamTitle = args[3];
+                        $.setIniDbString(FILE_NAME, STREAM_TITLE, args[3]);
                     }
 
                     setStreamTitle(sender);
@@ -391,23 +476,7 @@
                     }
 
                     var hero = args[1].toLowerCase();
-                    if (!$.lang.get('sbb.hero.' + hero)) {
-                        $.say($.whisperPrefix(sender) + $.lang.get('sbb.hero.404', hero));
-                        return;
-                    }
-
-                    $.setIniDbString(FILE_NAME, CURRENT_HERO, hero);
-                    $.sbbPrintHeroStats($.getIniDbString(FILE_NAME, CURRENT_HERO, undefined));
-
-                    setStreamTitle(sender);
-
-                    var msg = JSON.stringify({
-                        show_stats: 'true',
-                        data: JSON.stringify($.sbbGetHistory(hero, currentMonth, currentYear)),
-                        title: $.lang.get('sbb.chart.hero.title', $.lang.get('sbb.hero.' + hero)),
-                        timeout: 30000
-                    });
-                    $.alertspollssocket.sendJSONToAll(msg);
+                    setHero(hero, sender);
 
                     return;
                 }
