@@ -31,9 +31,9 @@ To enable log parsing (automatic polls and results) uncomment the line in ```sbb
 
 == TODO
 * [*] Add automatic log parsing (link:https://github.com/SBBTracker/SBBTracker/blob/main/src/log_parser.py[See SBBTracker])
-* [ ] Add automatic polls based on parser (Polls are starting, but hero selection is not available in log)
+* [*] Add automatic polls based on parser
 * [ ] Track more stats with log parsing
-** Heros for selection (Not possible?)
+** Heros for selection
 ** Treasures
 ** Last seen board
 * [ ] (Maybe) create twitch plugin
