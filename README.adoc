@@ -37,3 +37,4 @@ To enable log parsing (automatic polls and results) uncomment the line in ```sbb
 ** Treasures
 ** Last seen board
 * [ ] (Maybe) create twitch plugin
+* [ ] Add bets on procs

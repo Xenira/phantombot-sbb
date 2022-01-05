@@ -29,7 +29,7 @@
         START_SCORE = 'startScore',
         WINS = 'wins',
         SESSION_PLACEMENTS = 'session';
-        STREAM_TITLE = 'streamTitle';
+    STREAM_TITLE = 'streamTitle';
 
     var JFile = java.io.File,
         JFileInputStream = java.io.FileInputStream;
@@ -144,7 +144,7 @@
      * 
      * @param {Object} entry
      */
-     function sbbAddHistoryEntry(entry) {
+    function sbbAddHistoryEntry(entry) {
         var historyFile = './addons/sbb/history.txt'
 
         if (!$.isDirectory('./addons/sbb/')) {
@@ -189,8 +189,8 @@
             }
         });
 
-        result.currentPickRate = 100/(history.currentTotal + 1) * (result.currentWins + result.currentLoss + 1);
-        result.totalPickRate = 100/(history.total + 1) * (result.totalWins + result.totalLoss + 1);
+        result.currentPickRate = 100 / (history.currentTotal + 1) * (result.currentWins + result.currentLoss + 1);
+        result.totalPickRate = 100 / (history.total + 1) * (result.totalWins + result.totalLoss + 1);
 
         return result;
     }
@@ -227,7 +227,7 @@
      * @param {string} path
      * @returns {Array}
      */
-     function readFileChanges(path, lastOffset) {
+    function readFileChanges(path, lastOffset) {
         var result = {
             lines: [],
             position: lastOffset,
@@ -237,6 +237,12 @@
             return result;
         }
 
+        result.position = getFileSize(path);
+        if (result.position < lastOffset) {
+            log('File size changed. Treating as new log file. Start reading at ' + result.position);
+            lastOffset = result.position;
+        }
+
         try {
             var fis = new JFileInputStream(path);
             fis.skip(lastOffset);
@@ -244,7 +250,6 @@
             for (var i = 0; scan.hasNextLine(); ++i) {
                 result.lines.push(scan.nextLine());
             }
-            result.position = fis.getChannel().position();
             fis.close();
         } catch (e) {
             $.log.error('Failed to open \'' + path + '\': ' + e);
@@ -258,12 +263,22 @@
      * @param {string} path
      * @returns {boolean}
      */
-     function fileExists(path) {
+    function fileExists(path) {
         try {
             var f = new JFile(path);
             return f.exists();
         } catch (e) {
             return false;
+        }
+    }
+
+    function getFileSize(path) {
+        try {
+            var f = new JFile(path);
+            return f.length();
+        } catch (e) {
+            $.log.error(e);
+            return 0;
         }
     }
 
@@ -275,7 +290,7 @@
             offset = fileChanges.position;
             fileChanges.lines.forEach(line => {
                 if (line.includes('ActionPresentHeroDiscover')) {
-                    $.consoleLn('Hero selection opened');
+                    log('Hero selection opened');
                     var heros = [];
                     while ((match = heroRegex.exec(line)) !== null) {
                         var heroNumber = parseInt(match[1]);
@@ -285,8 +300,8 @@
                     }
                     var question = $.lang.get('sbb.poll.question');
 
-                    $.poll.runPoll(question, heros, 30, $.channelName, 1, function(winner) {
-                        $.consoleLn($.inidb.get('pollresults', 'istie'));
+                    $.poll.runPoll(question, heros, 35, $.channelName, 1, function (winner) {
+                        log($.inidb.get('pollresults', 'istie'));
                         if (winner === false) {
                             $.say($.lang.get('sbb.poll.novotes', 'Which hero should I pick?'));
                             return;
@@ -298,11 +313,11 @@
                         }
                     });
                 } else if (line.includes('ActionEnterResultsPhase')) {
-                    $.consoleLn('Finished game')
+                    log('Finished game')
                     var place = parseInt(line.match(/Placement: (\d)/)[1]),
                         points = parseInt(line.match(/RankReward: (-?\d+)/)[1]);
-                        firstWinPoints = parseInt(line.match(/FirstWinOfTheDayDustReward: (\d+)/)[1])
-                    $.consoleLn(place + ' ' + points + ' ' + firstWinPoints)
+                    firstWinPoints = parseInt(line.match(/FirstWinOfTheDayDustReward: (\d+)/)[1]);
+                    log(place + ' ' + points + ' ' + firstWinPoints);
                     setResult(place, points, firstWinPoints, $.channelName); // TODO: Fix reward
                 } else if (!running && line.includes('ActionCreateCard') && line.includes('Zone: Hero') && (match = heroRegex.exec(line)) != null) {
                     var heroNumber = parseInt(match[1]);
@@ -388,6 +403,10 @@
         $.alertspollssocket.sendJSONToAll(msg);
     }
 
+    function log(msg) {
+        $.consoleLn('[sbb] ' + msg);
+    }
+
     /*
      * @event command
      */
@@ -439,9 +458,9 @@
                     return;
                 }
 
-                 /*
-                 * @commandpath sbb set [score] [wins] [stream-title] - Sets up base stats without history reset
-                 */
+                /*
+                * @commandpath sbb set [score] [wins] [stream-title] - Sets up base stats without history reset
+                */
                 if (action.equalsIgnoreCase('set')) {
                     if (args.length < 3 || args.length > 4) {
                         $.say($.whisperPrefix(sender) + $.lang.get('sbb.usage.set'));
@@ -503,9 +522,9 @@
                     return;
                 }
 
-                 /*
-                 * @commandpath sbb stats - Triggers stat overlay to show
-                 */
+                /*
+                * @commandpath sbb stats - Triggers stat overlay to show
+                */
                 if (action.equalsIgnoreCase('stats')) {
                     var msg = JSON.stringify({
                         show_stats: 'true',
